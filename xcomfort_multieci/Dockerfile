@@ -18,5 +18,3 @@ RUN apk add --no-cache libusb
 COPY --from=builder /xcomfortd-go /usr/bin/xcomfortd-go
 COPY rootfs /
 RUN chmod +x /etc/services.d/xcomfort_multieci/run
-
-CMD [ "/init" ]
