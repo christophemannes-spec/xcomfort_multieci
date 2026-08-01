@@ -1,0 +1,70 @@
+#!/usr/bin/with-contenv bashio
+
+set -e
+
+CONFIG_PATH=/config
+
+MQTT_CLIENT_ID="$(bashio::config 'mqtt_client_id')"
+MQTT_HOST=$(bashio::services mqtt "host")
+MQTT_PORT=$(bashio::services mqtt "port")
+MQTT_USER=$(bashio::services mqtt "username")
+MQTT_PASSWORD=$(bashio::services mqtt "password")
+
+DATAPOINTS_FILE="$(bashio::config 'datapoints_file')"
+EPROM="$(bashio::config 'eprom')"
+HA_DISCOVERY="$(bashio::config 'ha_discovery')"
+HA_DISCOVERY_PREFIX="$(bashio::config 'ha_discovery_prefix')"
+HA_DISCOVERY_REMOVE="$(bashio::config 'ha_discovery_remove')"
+VERBOSE="$(bashio::config 'verbose')"
+HIDAPI="$(bashio::config 'use_hidapi')"
+
+set -- xcomfortd-go \
+    --client-id "${MQTT_CLIENT_ID}" \
+    --server "tcp://${MQTT_USER}:${MQTT_PASSWORD}@${MQTT_HOST}:${MQTT_PORT}" \
+    --hadiscoveryprefix "${HA_DISCOVERY_PREFIX}"
+
+if [ "$EPROM" = "true" ]; then
+    set -- "$@" --eprom
+fi
+
+# If datapoints_files (list) is populated, pass one --file per entry, in
+# the same order as eci_hosts, so each ECI loads only its own scoped
+# datapoint file - this avoids the multi-ECI datapoint-number collision
+# described in README.md. Falls back to the single shared datapoints_file
+# (original behaviour, fine for single-ECI or single-USB-stick setups) if
+# the list is empty.
+FILES_COUNT=$(bashio::config 'datapoints_files|length')
+if [ "$FILES_COUNT" -gt 0 ]; then
+    bashio::log.info "Using ${FILES_COUNT} per-ECI datapoint file(s)"
+    for i in $(bashio::config 'datapoints_files'); do
+        set -- "$@" --file "${CONFIG_PATH}/${i}"
+    done
+elif [ "$DATAPOINTS_FILE" != "" ]; then
+    bashio::log.warning "Using a single shared datapoints_file for all interfaces. If you have more than one ECI/host, this WILL cause the datapoint-number collision described in README.md - switch to datapoints_files (one file per host, in host order) instead."
+    set -- "$@" --file "${CONFIG_PATH}/${DATAPOINTS_FILE}"
+fi
+
+if [ "$HA_DISCOVERY" = "true" ]; then
+    set -- "$@" --hadiscovery
+fi
+
+if [ "$HA_DISCOVERY_REMOVE" = "true" ]; then
+    set -- "$@" --hadiscoveryremove
+fi
+
+if [ "$VERBOSE" = "true" ]; then
+    set -- "$@" --verbose
+fi
+
+for i in $(bashio::config 'eci_hosts'); do
+    set -- "$@" --host "$i"
+done
+
+if [ "$HIDAPI" = "true" ]; then
+    set -- "$@" --hidapi
+fi
+
+bashio::log.info "Starting $(xcomfortd-go --version)"
+bashio::log.info "$(echo "$@" | sed "s/${MQTT_USER}:${MQTT_PASSWORD}/*****/g")"
+
+exec "$@"

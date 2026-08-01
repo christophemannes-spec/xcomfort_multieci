@@ -1,0 +1,352 @@
+package xc
+
+const (
+	MCI_PT_TX       = 0xB1
+	MCI_PT_CONFIG   = 0xB2
+	MCI_PT_RX       = 0xC1
+	MCI_PT_STATUS   = 0xC3
+	MCI_PT_EXTENDED = 0xD1
+)
+
+/* Events that can be sent to datapoints with MGW_PT_TX.  Not all events
+   are valid for all devices. */
+
+const (
+	MCI_TE_UCHAR          = 0x02
+	MCI_TE_SWITCH         = 0x0A
+	MCI_TE_DIM            = 0x0D // Dimmer, Analogue
+	MCI_TE_JALO           = 0x0E // Jalousie
+	MCI_TE_PUSHBUTTON     = 0x50 // All types
+	MCI_TE_REQUEST        = 0x0B // All mains powered
+	MCI_TE_INT16_1POINT   = 0x11
+	MCI_TE_FLOAT          = 0x1A // Room Manager, Analogue input
+	MCI_TE_TIME           = 0x2A // Room Manager, HRV
+	MCI_TE_DATE           = 0x2B // Room Manager, HRV
+	MCI_TE_RC_DATA        = 0x2C
+	MCI_TE_UNIT32         = 0x30 // Room Manager
+	MCI_TE_UINT32_1POINT  = 0x31
+	MCI_TE_UINT32_2POINT  = 0x32
+	MCI_TE_UINT32_3POINT  = 0x33
+	MCI_TE_UINT16         = 0x40
+	MCI_TE_UINT16_1POINT  = 0x41
+	MCI_TE_UINT16_2POINT  = 0x42
+	MCI_TE_UINT16_3POINT  = 0x43
+	MCI_TE_DIMPLEX_CONFIG = 0x44
+	MCI_TE_DIMPLEX_TEMP   = 0x45
+	MCI_TE_HRV_IN         = 0x46
+	MCI_TE_REQ_STATUS_NEW = 0x72
+	MCI_TE_BASICMODE      = 0x80
+	MCI_TE_DIRECT         = 0xA0
+)
+
+const (
+	// TX_EVENT_SWITCH
+	MCI_TED_OFF = 0x00
+	MCI_TED_ON  = 0x01
+
+	// TX_EVENT_DIM
+	MCI_TED_STOP     = 0x00
+	MCI_TED_DARKER   = 0x04
+	MCI_TED_BRIGHTER = 0x0F
+	MCI_TED_PERCENT  = 0x40
+
+	// TX_EVENT_JALO
+	MCI_TED_CLOSE      = 0x00
+	MCI_TED_OPEN       = 0x01
+	MCI_TED_JSTOP      = 0x02
+	MCI_TED_STEP_CLOSE = 0x10
+	MCI_TED_STEP_OPEN  = 0x11
+
+	// TX_EVENT_PUSHBUTTON
+	MCI_TED_UP            = 0x50
+	MCI_TED_DOWN          = 0x51
+	MCI_TED_UP_PRESSED    = 0x54
+	MCI_TED_UP_RELEASED   = 0x55
+	MCI_TED_DOWN_PRESSED  = 0x56
+	MCI_TED_DOWN_RELEASED = 0x57
+
+	// TX_EVENT_REQUEST
+	MCI_TED_DUMMY = 0x00
+
+	// TX_EVENT_BASIC_MODE
+	MCI_TED_LEARNMODE_ON    = 0x00
+	MCI_TED_LEARNMODE_OFF   = 0x01
+	MCI_TED_ASSIGN_ACTUATOR = 0x10
+	MCI_TED_REMOVE_ACTUATOR = 0x20
+	MCI_TED_REMOVE_SENSOR   = 0x30
+
+	MCI_TED_DIRECT_ON           = 0xA0
+	MCI_TED_DIRECT_OFF          = 0xA1
+	MCI_TED_DIRECT_SET_LOCK     = 0xA2
+	MCI_TED_DIRECT_RELEASE_LOCK = 0xA3
+	MCI_TED_DIRECT_DIM          = 0xA4
+)
+
+/* Events that can be received via MGW_PT_RX.  These are events that are
+   known by MRF, they may not all be applicable to datapoints. */
+
+const (
+	RX_EVENT_ON            = 0x50
+	RX_EVENT_OFF           = 0x51
+	RX_EVENT_SWITCH_ON     = 0x52
+	RX_EVENT_SWITCH_OFF    = 0x53
+	RX_EVENT_UP_PRESSED    = 0x54
+	RX_EVENT_UP_RELEASED   = 0x55
+	RX_EVENT_DOWN_PRESSED  = 0x56
+	RX_EVENT_DOWN_RELEASED = 0x57
+	RX_EVENT_FORCED        = 0x5A
+	RX_EVENT_SINGLE_ON     = 0x5B
+	RX_EVENT_VALUE         = 0x62
+	RX_EVENT_TOO_COLD      = 0x63
+	RX_EVENT_TOO_WARM      = 0x64
+	RX_EVENT_STATUS        = 0x70
+	RX_EVENT_STATUS_EXT    = 0x73
+	RX_EVENT_BASIC_MODE    = 0x80
+)
+
+var rxEventMap = map[byte]Event{
+	RX_EVENT_ON:            EventOn,
+	RX_EVENT_OFF:           EventOff,
+	RX_EVENT_SWITCH_ON:     EventSwitchOn,
+	RX_EVENT_SWITCH_OFF:    EventSwitchOff,
+	RX_EVENT_UP_PRESSED:    EventUpPressed,
+	RX_EVENT_UP_RELEASED:   EventUpReleased,
+	RX_EVENT_DOWN_PRESSED:  EventDownPressed,
+	RX_EVENT_DOWN_RELEASED: EventDownReleased,
+	RX_EVENT_FORCED:        EventForced,
+	RX_EVENT_SINGLE_ON:     EventSingleOn,
+	RX_EVENT_VALUE:         EventValue,
+	RX_EVENT_TOO_COLD:      EventTooCold,
+	RX_EVENT_TOO_WARM:      EventTooWarm,
+}
+
+// Data types for RX events
+
+const (
+	RX_DATA_TYPE_NO_DATA       = 0x00
+	RX_DATA_TYPE_PERCENT       = 0x01
+	RX_DATA_TYPE_UINT8         = 0x02
+	RX_DATA_TYPE_INT16_1POINT  = 0x03
+	RX_DATA_TYPE_FLOAT         = 0x04
+	RX_DATA_TYPE_UINT16        = 0x0D
+	RX_DATA_TYPE_UINT16_1POINT = 0x21
+	RX_DATA_TYPE_UINT16_2POINT = 0x22
+	RX_DATA_TYPE_UINT16_3POINT = 0x23
+	RX_DATA_TYPE_UINT32        = 0x0E
+	RX_DATA_TYPE_UINT32_1POINT = 0x0F
+	RX_DATA_TYPE_UINT32_2POINT = 0x10
+	RX_DATA_TYPE_UINT32_3POINT = 0x11
+	RX_DATA_TYPE_RC_DATA       = 0x17
+	RX_DATA_TYPE_RM_TIME       = 0x1E
+	RX_DATA_TYPE_RM_DATE       = 0x1F
+	RX_DATA_TYPE_ROSETTA       = 0x35
+	RX_DATA_TYPE_HRV_OUT       = 0x37
+	RX_DATA_TYPE_SERIAL_NUMBER = 0x39
+	RX_DATA_TYPE_RCT_OUT       = 0x3F
+	RX_DATA_TYPE_RCT_REQ       = 0x42
+)
+
+// INFO_SHORT values
+
+const (
+	RX_IS_OFF    = 0x00
+	RX_IS_ON     = 0x01
+	RX_IS_OFF_NG = 0x02
+	RX_IS_ON_NG  = 0x03
+
+	RX_IS_STOP  = 0x00
+	RX_IS_OPEN  = 0x01
+	RX_IS_CLOSE = 0x02
+)
+
+/* Config commands that can be sent to the stick itself. These are sent with
+   the MGW_PT_CONFIG message and responses are received via the MGW_PT_STATUS
+   message. */
+
+const (
+	CONF_CONNEX          = 0x02
+	CONF_RS232_BAUD      = 0x03
+	CONF_SEND_OK_MRF     = 0x04
+	CONF_RS232_FLOW      = 0x05
+	CONF_RS232_CRC       = 0x06
+	CONF_TIMEACCOUNT     = 0x0A
+	CONF_COUNTER_RX      = 0x0B
+	CONF_COUNTER_TX      = 0x0C
+	CONF_SERIAL          = 0x0E
+	CONF_LED             = 0x0F
+	CONF_LED_DIM         = 0x1A
+	CONF_RELEASE         = 0x1B
+	CONF_SEND_CLASS      = 0x1D
+	CONF_SEND_RFSEQNO    = 0x1E
+	CONF_BACK_TO_FACTORY = 0x1F
+)
+
+const (
+	// CONF_CONNEX
+	CF_DATA_AUTO  = 0x01
+	CF_DATA_USB   = 0x02
+	CF_DATA_RS232 = 0x03
+
+	CF_DATA_STATUS = 0x00
+
+	// CONF_RS232_BAUD
+	CF_DATA_BD1200  = 0x01
+	CF_DATA_BD2400  = 0x02
+	CF_DATA_BD4800  = 0x03
+	CF_DATA_BD9600  = 0x04
+	CF_DATA_BD14400 = 0x05
+	CF_DATA_BD19200 = 0x06
+	CF_DATA_BD38400 = 0x07
+	CF_DATA_BD56700 = 0x08
+
+	// CONF_RS232_CRC, CONF_SEND_RFSEQNO, etc.
+	CF_DATA_CLEAR = 0x0F
+	CF_DATA_SET   = 0x01
+
+	// CONF_COUNTER_RX, TX, SERIAL
+	CF_DATA_GET = 0x00
+
+	// CONF_LED
+	CF_DATA_LED_STANDARD  = 0x01
+	CF_DATA_REVERSE_GREEN = 0x02
+	CF_DATA_LED_OFF       = 0x03
+
+	// CONF_RELEASE
+	CF_DATA_GET_REVISION = 0x10
+
+	// CONF_BACK_TO_FACTORY
+	CF_DATA_BTF_GW  = 0x0F
+	CF_DATA_BTF_MRF = 0xF0
+	CF_DATA_BTF_ALL = 0xFF
+)
+
+/* MGW_ST_STATUS, status message received from the stick itself, via
+   the MGW_PT_STATUS message. */
+
+const (
+	MGW_STT_CONNEX       = 0x02
+	MGW_STT_RS232_BAUD   = 0x03
+	MGW_STT_RS232_FLOW   = 0x05
+	MGW_STT_RS232_CRC    = 0x06
+	MCI_STT_ERROR        = 0x09
+	MCI_STT_TIMEACCOUNT  = 0x0A
+	MCI_STT_COUNTER_RX   = 0x0B
+	MCI_STT_COUNTER_TX   = 0x0C
+	MGW_STT_SEND_OK_MRF  = 0x0D
+	MGW_STT_SERIAL       = 0x0E
+	MGW_STT_LED          = 0x0F
+	MGW_STT_LED_DIM      = 0x1A
+	MGW_STT_RELEASE      = 0x1B
+	MGW_STT_OK           = 0x1C
+	MGW_STT_SEND_CLASS   = 0x1D
+	MGW_STT_SEND_RFSEQNO = 0x1E
+)
+
+const (
+	MGW_HRV_ERROR_CONNECTION_LOST       = 0x01
+	MGW_HRV_ERROR_VALVE_SLUGGISH        = 0x02
+	MGW_HRV_ERROR_VALVE_RANGE_TOO_LARGE = 0x04
+	MGW_HRV_ERROR_VALVE_RANGE_TOO_SMALL = 0x08
+	MGW_HRV_ERROR_BATTERY_EMPTY         = 0x10
+	MGW_HRV_STATUS_DEEP_SLEEP           = 0x20
+)
+
+const (
+	MGW_HRV_REQ_NOTHING   = 0
+	MGW_HRV_REQ_TSETPOINT = 1
+	MGW_HRV_REQ_TIME      = 2
+	MGW_HRV_REQ_DATE      = 3
+)
+
+const (
+	// MCI_STT_ERROR
+	MCI_STS_GENERAL     = 0x00
+	MCI_STS_UNKNOWN     = 0x01
+	MCI_STS_DP_OOR      = 0x02
+	MCI_STS_BUSY_MRF    = 0x03
+	MCI_STS_BUSY_MRF_RX = 0x04
+	MCI_STS_TX_MSG_LOST = 0x05
+	MCI_STS_NO_ACK      = 0x06
+
+	// MCI_STT_TIMEACCOUNT
+	STATUS_DATA    = 0x00
+	STATUS_IS_0    = 0x01
+	STATUS_LESS_10 = 0x02
+	STATUS_MORE_15 = 0x03
+
+	// MGW_STT_RELEASE
+	STATUS_REVISION = 0x10
+
+	// MGW_STT_OK
+	STATUS_OK_MRF    = 0x04
+	STATUS_OK_CONFIG = 0x05
+	STATUS_OK_BTFACT = 0xCE
+)
+
+const (
+	ERR_T_SWITCH          = 0x80
+	ERR_T_PERCENT         = 0x81
+	ERR_T_DIM             = 0x82
+	ERR_T_JALO            = 0x83
+	ERR_T_JALO_STEP       = 0x84
+	ERR_T_REQ_DASS        = 0x85
+	ERR_T_PUSHBUTTON      = 0x88
+	ERR_T_EVENT           = 0x89
+	ERR_T_TIMEACCOUNT     = 0x8C
+	ERR_T_SEND_OK_MRF     = 0x8D
+	ERR_T_RELEASE         = 0x91
+	ERR_T_BACK_TO_FACTORY = 0x92
+	ERR_T_COUNTER_RX      = 0x93
+	ERR_T_COUNTER_TX      = 0x94
+	ERR_T_TYPE            = 0x95
+	ERR_T_PACKET_TYPE     = 0x96
+	ERR_T_RS232_CRC       = 0x98
+	ERR_T_RFREVISION      = 0x9A
+	ERR_T_SEND_CLASS      = 0x9B
+	ERR_T_SEND_RFSEQNO    = 0x9C
+	ERR_T_EXPECTED_STATUS = 0xA1
+	ERR_T_BUFFER_FULL     = 0xA2
+	ERR_T_RX_IN_PROGRESS  = 0xA3
+	ERR_T_STOPBYTE        = 0xA4
+	ERR_T_PKTLENGTH       = 0xA5
+	ERR_T_CRC             = 0xA6
+	ERR_T_RS232_TIMEOUT   = 0xA7
+	ERR_T_BM_NO_TARGET    = 0xA8
+	ERR_T_DP_NOT_ASSIGNED = 0xA9
+	ERR_T_VALUE           = 0xAA
+)
+
+const (
+	STATUS_DATA_OKMRF_NOINFO     = 0x00
+	STATUS_DATA_OKMRF_ACK_DIRECT = 0x10
+	STATUS_DATA_OKMRF_ACK_ROUTED = 0x20
+	STATUS_DATA_OKMRF_ACK        = 0x30
+	STATUS_DATA_OKMRF_ACK_BM     = 0x40
+	STATUS_DATA_OKMRF_DPREMOVED  = 0x80
+)
+
+const (
+	MCI_ET_RD          = 0x10
+	MCI_ET_REPLY       = 0x11
+	MCI_ET_REQU_DPL    = 0x20
+	MCI_ET_SEND_DPL    = 0x21
+	MCI_ET_DPL_CHANGED = 0x22
+	MCI_ET_REQU_STL    = 0x60
+	MCI_ET_SEND_STL    = 0x61
+	MCI_ET_STL_CHANGED = 0x62
+)
+
+const (
+	MCI_TED_DPLMODE_BACKUP  = 0x01
+	MCI_TED_DPLMODE_OFFICE  = 0x02
+	MCI_TED_DPLMODE_CMF_EXT = 0x03
+	MCI_TED_DPLMODE_ECO_EXT = 0x04
+	MCI_TED_DPLMODE_OFF     = 0x05
+)
+
+const (
+	MCI_SER_START = 0x5A
+	MCI_SER_STOP  = 0xA5
+)
+
+const DPL_TYPE_EXT2 = 2
