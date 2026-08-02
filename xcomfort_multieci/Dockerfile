@@ -1,8 +1,7 @@
-﻿ARG BUILD_FROM
-FROM golang:1.24-bookworm AS builder
+ARG BUILD_FROM
+FROM golang:1.24-alpine AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libusb-1.0-0-dev pkg-config && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache --update gcc musl-dev linux-headers pkgconfig libusb-dev
 
 WORKDIR /src
 COPY src/ .
