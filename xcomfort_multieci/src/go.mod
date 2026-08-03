@@ -22,8 +22,3 @@ require (
 	golang.org/x/net v0.46.0 // indirect
 )
 
-replace golang.org/x/net => github.com/golang/net v0.46.0
-
-replace golang.org/x/sync => github.com/golang/sync v0.17.0
-
-replace golang.org/x/text => github.com/golang/text v0.30.0

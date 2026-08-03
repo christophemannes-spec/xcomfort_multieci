@@ -6,6 +6,7 @@ RUN apk add --no-cache --update gcc musl-dev linux-headers pkgconfig libusb-dev
 WORKDIR /src
 COPY src/ .
 
+RUN go mod tidy
 RUN go build -o /xcomfortd-go .
 
 FROM $BUILD_FROM
